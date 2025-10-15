@@ -227,6 +227,13 @@ Brotli, Zstandard and ar, cpio, jar, tar, zip, dump, 7z, arj.
     <url>https://github.com/apache/commons-compress/actions</url>
   </ciManagement>
   <build>
+      <extensions>
+          <extension>
+              <groupId>com.code-intelligence</groupId>
+              <artifactId>cifuzz-maven-extension</artifactId>
+              <version>1.14.9</version>
+          </extension>
+      </extensions>
     <defaultGoal>clean artifact:check-buildplan verify apache-rat:check checkstyle:check pmd:check japicmp:cmp javadoc:javadoc</defaultGoal>
     <pluginManagement>
       <plugins>
@@ -281,6 +288,8 @@ Brotli, Zstandard and ar, cpio, jar, tar, zip, dump, 7z, arj.
               <exclude>.projectile</exclude>
               <exclude>.mvn/**</exclude>
               <exclude>.gitattributes</exclude>
+                <exclude>cifuzz.yaml</exclude>
+                <exclude>**/*cifuzz*/**</exclude>
             </excludes>
           </configuration>
         </plugin>
