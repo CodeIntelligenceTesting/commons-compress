@@ -37,8 +37,9 @@ build-system: maven
 ## Directories containing sample inputs used as seeds for running fuzz tests.
 ## For general information on seed corpora, see:
 ## https://docs.code-intelligence.com/glossary#seed-corpus
-#seed-corpus-dirs:
-# - path/to/seed-corpus
+seed-corpus-dirs:
+  - src/test/resources/pack200
+  - src/test/resources/pack200/jars
 
 ## Directories containing inputs for calculating coverage. These are used in
 ## addition to inputs found in the directory of the fuzz test.
@@ -52,7 +53,8 @@ build-system: maven
 
 ## Command-line arguments to pass to libFuzzer when running fuzz tests.
 ## See https://llvm.org/docs/LibFuzzer.html#options for possible options.
-#libfuzzer-args:
+libfuzzer-args:
+  - -use_value_profile=1
 # - -rss_limit_mb=4096
 
 ## Command-line arguments to pass to Honggfuzz when running fuzz tests.
@@ -63,8 +65,8 @@ build-system: maven
 ## Maximum time to run all fuzz tests. Default is 10 minutes. The time will be
 ## split up evenly between multiple fuzz tests. To keep running indefinitely,
 ## set value to 0.
-#max-fuzzing-duration: 30m
-
+max-fuzzing-duration: 0
+max-idle-time: 0
 ## Maximum time to run a single fuzz test. Default is 10 minutes.
 ## To keep running indefinitely, set value to 0.
 #max-fuzzing-duration-per-fuzz-test: 30m

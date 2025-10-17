@@ -21,13 +21,7 @@ package org.apache.commons.compress.harmony.pack200;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -300,4 +294,35 @@ class ArchiveTest extends AbstractTempDirTest {
         }
     }
 
+    @Test
+    void reproduceFuzzingOOMPack() {
+        final byte[] jarBytes = {-80, 20, -120, 99, -56, -58, -6, -75, -33, -21, 58, 79, -98, 80, -97, 37, 31, -56, 61, 47, 100, 44, 87, -118, 63, 126, 76, 112, -25, 81, 80, 75, 3, 4, 97, 0, 0, 0, 0, 0, 0, 8, 17, 61, -114, -102, 74, 16, 115, 94, 68, 33, -2, -1, -1, 127, 0, 0, 0, 0, 0, 0, 0, 114, 0, 0, 0, 0, 0, 0, 0, 67, -43, 86, -29, 71, 85, 90, 20, 4, -65, -86, -83, 70, -59, -112, 96, 80, 27, 49, 60, 1, 1, 0, 0, -39, 113, -69, 3};
+        final String jarPath = "src/test/resources/pack200/fuzzingOOMPack.jar";
+
+        // Helper to transform fuzzer input to JAR input
+        // Comment out if you rather want to use the jarBytes directly without writing to a file
+        try(FileOutputStream fileOutputStream = new FileOutputStream(jarPath)) {
+            fileOutputStream.write(jarBytes);
+        } catch (IOException e) {
+            throw  new RuntimeException(e); // Making sure the file is there for the test
+        }
+
+        // Test code
+        // Uncomment the ByteArrayInputStream and comment out the FileInputStream to use the byte array directly
+        try (//ByteArrayInputStream in = new ByteArrayInputStream(jarBytes);
+             FileInputStream in = new FileInputStream(jarPath);
+             JarInputStream jarIn = new JarInputStream(in);
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            final PackingOptions options = new PackingOptions();
+
+            try {
+                new Archive(jarIn, out, options).pack();
+            } catch (final IOException | /*IllegalArgumentException |*/ RuntimeException e) {
+                // Invalid jar or unsupported configuration, acceptable in fuzzing
+            }
+        } catch (final IOException ignored) {
+            // Ignore stream setup errors in fuzzing context
+        }
+    }
 }
