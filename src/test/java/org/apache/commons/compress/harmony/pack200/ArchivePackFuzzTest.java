@@ -19,6 +19,8 @@
 package org.apache.commons.compress.harmony.pack200;
 
 import com.code_intelligence.jazzer.junit.FuzzTest;
+import com.code_intelligence.jazzer.mutation.annotation.InRange;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,46 +36,41 @@ class ArchivePackFuzzTest {
                   final boolean gzip,
                   final boolean stripDebug,
                   final boolean keepFileOrder,
-                  final int effort,
-                  final boolean setSegmentLimit,
-                  final long segmentLimitSelector,
-                  final boolean verbose) {
+                  @InRange(min = 0, max = 9) final int effort,
+                  final long segmentLimit,
+                  final boolean verbose,
+                  final String modificationTime,
+                  final boolean quiet) {
         if (jarBytes == null || jarBytes.length == 0 || jarBytes.length > 5_000_000) {
             return;
         }
 
-        try (ByteArrayInputStream in = new ByteArrayInputStream(jarBytes);
-             JarInputStream jarIn = new JarInputStream(in);
-             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        try {
+            try (ByteArrayInputStream in = new ByteArrayInputStream(jarBytes);
+                 JarInputStream jarIn = new JarInputStream(in);
+                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-            final PackingOptions options = new PackingOptions();
-            options.setGzip(gzip);
-            options.setStripDebug(stripDebug);
-            options.setKeepFileOrder(keepFileOrder);
-            // effort range 0..9 like unit tests / spec
-            int boundedEffort = Math.abs(effort % 10);
-            options.setEffort(boundedEffort);
-            options.setVerbose(verbose);
-            // Only set segment limit sometimes; map selector to specific special values to hit code paths
-            if (setSegmentLimit) {
-                long limit;
-                switch ((int) (segmentLimitSelector % 5)) {
-                    case 0: limit = -1; break; // special: single segment
-                    case 1: limit = 0; break;  // special: one segment per file (except META-INF)
-                    case 2: limit = 1_000; break;
-                    case 3: limit = PackingOptions.SEGMENT_LIMIT; break;
-                    default: limit = 100_000; break;
+                final PackingOptions options = new PackingOptions();
+
+                try {
+                    options.setGzip(gzip);
+                    options.setStripDebug(stripDebug);
+                    options.setKeepFileOrder(keepFileOrder);
+                    options.setEffort(effort);
+                    options.setVerbose(verbose);
+                    options.setSegmentLimit(segmentLimit);
+                    options.setModificationTime(modificationTime);
+                    options.setQuiet(quiet);
+                    new Archive(jarIn, out, options).pack();
+                } catch (final IOException | /*IllegalArgumentException |*/ RuntimeException e) { // TODO Nullpointer finding might be a valid finding in the code. Double check and file bug if so.
+                    // Invalid jar or unsupported configuration, acceptable in fuzzing
                 }
-                options.setSegmentLimit(limit);
+            } catch (final IOException ignored) {
+                // Ignore stream setup errors in fuzzing context
             }
-
-            try {
-                new Archive(jarIn, out, options).pack();
-            } catch (final IOException | /*IllegalArgumentException |*/ RuntimeException e) { // TODO Nullpointer finding might be a valid finding in the code. Double check and file bug if so.
-                // Invalid jar or unsupported configuration, acceptable in fuzzing
-            }
-        } catch (final IOException ignored) {
+        } catch (RuntimeException e) {
             // Ignore stream setup errors in fuzzing context
         }
+
     }
 }

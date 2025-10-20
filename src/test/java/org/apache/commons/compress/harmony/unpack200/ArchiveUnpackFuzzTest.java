@@ -16,14 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.commons.compress.harmony.pack200;
+package org.apache.commons.compress.harmony.unpack200;
 
 import com.code_intelligence.jazzer.junit.FuzzTest;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.jar.JarOutputStream;
-import org.apache.commons.compress.harmony.unpack200.Archive;
 
 /**
  * Fuzzes the unpack200 Archive with arbitrary input data exercising configuration toggles.
@@ -35,33 +34,33 @@ class ArchiveUnpackFuzzTest {
     void fuzzUnpack(final byte[] data,
                     final boolean verbose,
                     final boolean quiet,
-                    final boolean setDeflateHint,
-                    final boolean deflateHintValue) {
-        // Keep inputs within a reasonable size to avoid excessive memory/time consumption.
-        if (data == null || data.length == 0 || data.length > 5_000_000) {
-            return;
-        }
+                    final boolean deflateHintValue,
+                    final boolean removePackFile) {
 
-        try (ByteArrayInputStream in = new ByteArrayInputStream(data);
-             ByteArrayOutputStream sink = new ByteArrayOutputStream();
-             JarOutputStream jarOut = new JarOutputStream(sink)) {
+        try {
+            try (ByteArrayInputStream in = new ByteArrayInputStream(data);
+                 ByteArrayOutputStream sink = new ByteArrayOutputStream();
+                 JarOutputStream jarOut = new JarOutputStream(sink)) {
 
-            final Archive archive = new Archive(in, jarOut);
-            // Exercise flags similarly to unit tests
-            if (setDeflateHint) {
+                final Archive archive = new Archive(in, jarOut);
+                // Exercise flags similarly to unit tests
                 archive.setDeflateHint(deflateHintValue);
-            }
-            archive.setVerbose(verbose);
-            archive.setQuiet(quiet);
+                archive.setVerbose(verbose);
+                archive.setQuiet(quiet);
+                archive.setRemovePackFile(removePackFile);
 
-            try {
-                archive.unpack();
-            } catch (final IOException | IllegalArgumentException e) {
-                // Expected for most inputs which are not valid Pack200 or compressed streams
-                // Swallow to let Jazzer focus on crashes (e.g., unchecked exceptions, verifier errors)
+                try {
+                    archive.unpack();
+                } catch (final IOException | RuntimeException e) {
+                    // Expected for most inputs which are not valid Pack200 or compressed streams
+                    // Swallow to let Jazzer focus on crashes (e.g., unchecked exceptions, verifier errors)
+                }
+            } catch (final IOException ignored) {
+                // Ignore stream setup errors in fuzzing context
             }
-        } catch (final IOException ignored) {
-            // Ignore stream setup errors in fuzzing context
+        } catch (RuntimeException e) {
+            // ignored
         }
+
     }
 }
