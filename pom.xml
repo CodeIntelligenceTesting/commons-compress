@@ -237,7 +237,7 @@ Brotli, Zstandard and ar, cpio, jar, tar, zip, dump, 7z, arj.
           <extension>
               <groupId>com.code-intelligence</groupId>
               <artifactId>cifuzz-maven-extension</artifactId>
-              <version>1.14.9</version>
+              <version>1.15.0</version>
           </extension>
       </extensions>
     <defaultGoal>clean artifact:check-buildplan verify apache-rat:check checkstyle:check pmd:check japicmp:cmp javadoc:javadoc</defaultGoal>

@@ -37,9 +37,9 @@ build-system: maven
 ## Directories containing sample inputs used as seeds for running fuzz tests.
 ## For general information on seed corpora, see:
 ## https://docs.code-intelligence.com/glossary#seed-corpus
-seed-corpus-dirs:
-  - src/test/resources/pack200
-  - src/test/resources/pack200/jars
+#seed-corpus-dirs:
+#  - src/test/resources/pack200
+#  - src/test/resources/pack200/jars
 
 ## Directories containing inputs for calculating coverage. These are used in
 ## addition to inputs found in the directory of the fuzz test.
@@ -55,6 +55,7 @@ seed-corpus-dirs:
 ## See https://llvm.org/docs/LibFuzzer.html#options for possible options.
 libfuzzer-args:
   - -use_value_profile=1
+#  - -timeout=1
 # - -rss_limit_mb=4096
 
 ## Command-line arguments to pass to Honggfuzz when running fuzz tests.
