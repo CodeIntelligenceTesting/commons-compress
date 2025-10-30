@@ -55,6 +55,16 @@ public abstract class AbstractTarHeader {
 
     public AbstractTarHeader(
             final @WithUtf8Length(min = 1, max = 100) String fileName,
+            final @InRange(min = 0, max = OCTAL_11_DIGITS) long fileSize,
+            final @InRange(min = 0, max = OCTAL_11_DIGITS) long lastModifiedTime,
+            final byte linkIndicator,
+            final @WithUtf8Length(min = 1, max = 100) String linkName,
+            final String magicAndVersion) {
+        this(fileName, 0100644, 1000, 100, fileSize, lastModifiedTime, linkIndicator, linkName, magicAndVersion);
+    }
+
+    public AbstractTarHeader(
+            final @WithUtf8Length(min = 1, max = 100) String fileName,
             final @InRange(min = 0, max = OCTAL_7_DIGITS) int fileMode,
             final @InRange(min = 0, max = OCTAL_5_DIGITS) int ownerId,
             final @InRange(min = 0, max = OCTAL_5_DIGITS) int groupId,
@@ -63,6 +73,9 @@ public abstract class AbstractTarHeader {
             final byte linkIndicator,
             final @WithUtf8Length(min = 1, max = 100) String linkName,
             final String magicAndVersion) {
+        this.fileMode = fileMode;
+        this.ownerId = ownerId;
+        this.groupId = groupId;
         this.fileName = fileName;
         this.fileSize = fileSize;
         this.lastModifiedTime = lastModifiedTime;

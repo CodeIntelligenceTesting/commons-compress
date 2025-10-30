@@ -24,15 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
@@ -344,6 +336,40 @@ class ArchiveTest extends AbstractTempDirTest {
                 JarOutputStream out = new JarOutputStream(new FileOutputStream(file))) {
             final Archive archive = new Archive(in, out);
             archive.unpack();
+        }
+    }
+
+    @Test
+    void reproduceTimeoutUnpack() {
+        final byte[] data = new byte[] {-54, -2, -48, 13, 7, -106, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 31, 0, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 78, 83, 73, -1, 7, 0, 0, 0, 0, 0, 0, 0, 86, 79, 76, 65, 73, 76, 69, 7, 7, 7, 7, 7, 7, 7, 7, 7, 0, -7, 7, 0, -7, 7, 7, 7, 7, 7, 7, -1, -1, -1, -1, 0, -4, 0, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, -1, 61, 7, 7, 7, 7, 7, 7, 7, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 20, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 0, 0, 1, 0, 0, 0, 4, 4, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, -4, 0, 7, 7, 7, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 42, 7, -106};
+        final boolean verbose = true;
+        final boolean quiet = false;
+        final boolean deflateHintValue = true;
+        final boolean removePackFile = true;
+
+        try {
+            try (ByteArrayInputStream in = new ByteArrayInputStream(data);
+                 ByteArrayOutputStream sink = new ByteArrayOutputStream();
+                 JarOutputStream jarOut = new JarOutputStream(sink)) {
+
+                final Archive archive = new Archive(in, jarOut);
+                // Exercise flags similarly to unit tests
+                archive.setDeflateHint(deflateHintValue);
+                archive.setVerbose(verbose);
+                archive.setQuiet(quiet);
+                archive.setRemovePackFile(removePackFile);
+
+                try {
+                    archive.unpack();
+                } catch (final IOException | RuntimeException e) {
+                    // Expected for most inputs which are not valid Pack200 or compressed streams
+                    // Swallow to let Jazzer focus on crashes (e.g., unchecked exceptions, verifier errors)
+                }
+            } catch (final IOException ignored) {
+                // Ignore stream setup errors in fuzzing context
+            }
+        } catch (RuntimeException e) {
+            // ignored
         }
     }
 
