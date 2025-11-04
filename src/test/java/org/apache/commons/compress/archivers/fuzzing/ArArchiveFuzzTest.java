@@ -21,7 +21,6 @@ package org.apache.commons.compress.archivers.fuzzing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -33,6 +32,7 @@ import com.code_intelligence.jazzer.junit.FuzzTest;
 import com.code_intelligence.jazzer.mutation.annotation.InRange;
 import com.code_intelligence.jazzer.mutation.annotation.NotNull;
 import com.code_intelligence.jazzer.mutation.annotation.WithLength;
+import com.code_intelligence.jazzer.mutation.annotation.WithUtf8Length;
 import com.code_intelligence.jazzer.mutation.utils.PropertyConstraint;
 import org.apache.commons.compress.archivers.ar.*;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -49,11 +49,13 @@ public class ArArchiveFuzzTest extends AbstractWritable {
 
 
     @FuzzTest
-    public void arOutAndInTest(final String fileName,final long length, final int userId, final int groupId, final int mode, final long lastModified, byte[] data) throws IOException, FileNotFoundException {
+    public void arOutAndInFuzzTest(
+            final @NotNull(constraint = PropertyConstraint.RECURSIVE) @WithUtf8Length(min = 1, max = 64) String fileName,
+            final @WithLength(min = 0, max = 8192) byte[] data) throws IOException {
         final File file = new File("target/ArOutAndInTest.ar");
         Files.deleteIfExists(file.toPath());
 
-
+        // Write an ar archive with two entries using fuzzed data
         try (ArArchiveOutputStream arOut = new ArArchiveOutputStream(new FileOutputStream(file))) {
             arOut.setLongFileMode(ArArchiveOutputStream.LONGFILE_BSD);
             // entry 1
@@ -65,26 +67,62 @@ public class ArArchiveFuzzTest extends AbstractWritable {
             arOut.write(data);
             arOut.closeArchiveEntry();
         }
-        try (
-                ArArchiveInputStream arIn = ArArchiveInputStream.builder().setFile(file).get()) {
-            final ArArchiveEntry entry = arIn.getNextEntry();
-            assertEquals(fileName, entry.getName());
-            // Fix
-            // ar -tv Compress678Test-b.ar
-            // rw-r--r-- 0/0 1 Apr 27 16:10 2024 01234567891234567
-            // ar: Compress678Test-b.ar: Inappropriate file type or format
-            assertNotNull(arIn.getNextEntry());
+        // Read back and verify round-trip
+        try (ArArchiveInputStream arIn = ArArchiveInputStream.builder().setFile(file).get()) {
+            final ArArchiveEntry first = arIn.getNextEntry();
+            assertNotNull(first);
+            assertEquals(fileName, first.getName());
+            assertEquals(data.length, (int) first.getLength());
+            byte[] firstContent = readNBytes(arIn, (int) first.getLength());
+            assertEquals(data.length, firstContent.length);
+            for (int i = 0; i < data.length; i++) {
+                if (data[i] != firstContent[i]) {
+                    throw new AssertionError("First entry content mismatch at index " + i);
+                }
+            }
+
+            final ArArchiveEntry second = arIn.getNextEntry();
+            assertNotNull(second);
+            assertEquals("a", second.getName());
+            assertEquals(data.length, (int) second.getLength());
+            byte[] secondContent = readNBytes(arIn, (int) second.getLength());
+            assertEquals(data.length, secondContent.length);
+            for (int i = 0; i < data.length; i++) {
+                if (data[i] != secondContent[i]) {
+                    throw new AssertionError("Second entry content mismatch at index " + i);
+                }
+            }
+        } finally {
+            Files.deleteIfExists(file.toPath());
         }
-        Files.deleteIfExists(file.toPath());
     }
+
+    private static byte[] readNBytes(InputStream in, int len) throws IOException {
+        byte[] out = new byte[len];
+        int off = 0;
+        while (off < len) {
+            int r = in.read(out, off, len - off);
+            if (r < 0) break;
+            off += r;
+        }
+        if (off == len) return out;
+        byte[] truncated = new byte[off];
+        System.arraycopy(out, 0, truncated, 0, off);
+        return truncated;
+    }
+
+    @FuzzTest
+    public void test(MutablePair<
+            Boolean,
+            @WithLength(min = 0, max = 8) byte[]> test) {}
 
     @FuzzTest
     public void arInTest(@NotNull(constraint = PropertyConstraint.RECURSIVE) List<MutablePair<
                                      ArHeader,
-                                     @WithLength(min = 0, max = 8) byte[]>> arEntriesList,
+                                     byte[]>> arEntriesList,
                          @NotNull(constraint = PropertyConstraint.RECURSIVE) MutablePair<
                                  Boolean,
-                                 @InRange(min = 0, max = 8) byte[]> archiveStarter) {
+                                 @WithLength(min = 0, max = 8) byte[]> archiveStarter) {
         ByteBuffer buffer = ByteBuffer.allocate(getNecessaryByteArraySize(arEntriesList));
         try {
             if(!archiveStarter.getLeft()) {
@@ -97,7 +135,9 @@ public class ArArchiveFuzzTest extends AbstractWritable {
             for (MutablePair<ArHeader, byte[]> arEntry : arEntriesList ) {
                 try {
                     arEntry.getLeft().writeTo(buffer);
-                    this.writeBytes(buffer, arEntry.getRight(), arEntry.getRight().length);
+                    byte[] payload = arEntry.getRight();
+                    int payloadLen = payload == null ? 0 : payload.length;
+                    this.writeBytes(buffer, payload == null ? new byte[0] : payload, payloadLen);
                 } catch (RuntimeException e) {
                     // ignored
                 }
@@ -115,7 +155,8 @@ public class ArArchiveFuzzTest extends AbstractWritable {
     private int getNecessaryByteArraySize(List<MutablePair<ArHeader, byte[]>> arEntriesList) {
         int size = 8;
         for (MutablePair<ArHeader, byte[]> arEntry : arEntriesList) {
-            size += 60 + arEntry.getRight().length;
+            int rightLen = arEntry.getRight() == null ? 0 : arEntry.getRight().length;
+            size += 60 + rightLen;
         }
 
         return size;
