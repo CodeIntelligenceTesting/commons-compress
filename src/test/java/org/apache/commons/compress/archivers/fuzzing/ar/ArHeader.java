@@ -16,12 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.commons.compress.archivers.fuzzing;
+package org.apache.commons.compress.archivers.fuzzing.ar;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.code_intelligence.jazzer.mutation.annotation.InRange;
 import com.code_intelligence.jazzer.mutation.annotation.WithUtf8Length;
+import org.apache.commons.compress.archivers.fuzzing.AbstractWritable;
+
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 

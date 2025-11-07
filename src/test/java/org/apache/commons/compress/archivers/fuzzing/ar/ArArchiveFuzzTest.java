@@ -17,15 +17,11 @@
  * under the License.
  */
 
-package org.apache.commons.compress.archivers.fuzzing;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+package org.apache.commons.compress.archivers.fuzzing.ar;
 
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.List;
 
 import com.code_intelligence.jazzer.junit.FuzzTest;
@@ -34,13 +30,23 @@ import com.code_intelligence.jazzer.mutation.annotation.WithLength;
 import com.code_intelligence.jazzer.mutation.annotation.WithUtf8Length;
 import com.code_intelligence.jazzer.mutation.utils.PropertyConstraint;
 import org.apache.commons.compress.archivers.ar.*;
-import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.compress.archivers.fuzzing.AbstractWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+record ArchiveValues(@WithUtf8Length(min = 1, max = 64) String fileName,
+                            @WithLength(min = 0, max = 8192) byte[] data,
+                            long length,
+                            int userId,
+                            int groupId,
+                            int mode,
+                            long lastModified,
+                            boolean useRealDataLength,
+                            int alternativeDataLength) {}
+record ArEntriesRecord(ArHeader header, byte[] content) {}
+record ArchiveStarter(Boolean ifRealHeader, @WithLength(min = 0, max = 8) byte[] alternativeArchiveHeader) {}
 
 public class ArArchiveFuzzTest extends AbstractWritable {
-    private static final Logger log = LoggerFactory.getLogger(ArArchiveFuzzTest.class);
 
     public void writeArchiveHeader(final ByteBuffer buffer, byte[] archiveHeader) {
         if (buffer.remaining() == buffer.capacity()) {
@@ -50,15 +56,7 @@ public class ArArchiveFuzzTest extends AbstractWritable {
         }
     }
 
-    public record ArchiveValues(@WithUtf8Length(min = 1, max = 64) String fileName,
-                                @WithLength(min = 0, max = 8192) byte[] data,
-                                long length,
-                                int userId,
-                                int groupId,
-                                int mode,
-                                long lastModified,
-                                boolean useRealDataLength,
-                                int alternativeDataLength) {}
+
     @FuzzTest
     public void arOutAndInFuzzTest(
             final @NotNull(constraint = PropertyConstraint.RECURSIVE) List<ArchiveValues> archiveValuesList,
@@ -114,9 +112,6 @@ public class ArArchiveFuzzTest extends AbstractWritable {
         System.arraycopy(out, 0, truncated, 0, off);
         return truncated;
     }
-
-    public record ArEntriesRecord(ArHeader header, byte[] content) {}
-    public record ArchiveStarter(Boolean ifRealHeader, @WithLength(min = 0, max = 8) byte[] alternativeArchiveHeader) {}
 
     @FuzzTest
     public void arInTest(@NotNull(constraint = PropertyConstraint.RECURSIVE) List<ArEntriesRecord> arEntriesList,

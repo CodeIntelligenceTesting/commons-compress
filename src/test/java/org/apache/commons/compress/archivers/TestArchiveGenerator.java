@@ -14,7 +14,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import org.apache.commons.compress.archivers.dump.DumpArchiveConstants.SEGMENT_TYPE;
 import org.apache.commons.compress.archivers.dump.DumpArchiveEntry.TYPE;
-import org.apache.commons.compress.archivers.fuzzing.ArHeader;
+import org.apache.commons.compress.archivers.fuzzing.ar.ArHeader;
 import org.apache.commons.compress.archivers.fuzzing.ArjLocalHeader;
 import org.apache.commons.compress.archivers.fuzzing.ArjMainHeader;
 import org.apache.commons.compress.archivers.fuzzing.CpioBinaryHeader;
