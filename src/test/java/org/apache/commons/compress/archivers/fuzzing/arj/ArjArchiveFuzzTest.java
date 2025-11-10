@@ -35,14 +35,14 @@ import org.apache.commons.compress.archivers.arj.ArjArchiveInputStream;
 /**
  * Records providing structured fuzzing input using Jazzer's mutator framework
  */
-record ArjMainHeaderValues(@NotNull String fileName,
-                           @NotNull String comment,
-                           @NotNull String charsetName) {}
+record ArjMainHeaderValues(String fileName,
+                           String comment,
+                           String charsetName) {}
 
-record ArjLocalHeaderValues(@NotNull String fileName,
-                            @NotNull String comment,
-                            byte @NotNull[] content,
-                            @NotNull String charsetName) {}
+record ArjLocalHeaderValues(String fileName,
+                            String comment,
+                            byte[] content,
+                            String charsetName) {}
 
 public class ArjArchiveFuzzTest {
 

@@ -78,12 +78,12 @@ libfuzzer-args:
 ## Maximum time to run all fuzz tests. Default is 10 minutes. The time will be
 ## split up evenly between multiple fuzz tests. To keep running indefinitely,
 ## set value to 0.
-max-fuzzing-duration: 10h
+max-fuzzing-duration: 14h
 max-idle-time: 24h
 ## Maximum time to run a single fuzz test. Default is 10 minutes.
 ## To keep running indefinitely, set value to 0.
 #max-fuzzing-duration-per-fuzz-test: 24h
-
+min-severity: medium
 ## Set to true to print output of the `cifuzz run` command as JSON.
 #print-json: true
 
