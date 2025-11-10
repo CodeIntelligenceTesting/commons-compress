@@ -16,34 +16,33 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.commons.compress.archivers.fuzzing;
+package org.apache.commons.compress.archivers.fuzzing.arj;
 
-import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-public class ArjLocalHeader extends AbstractArjHeader {
+public class ArjMainHeader extends AbstractArjHeader {
 
-    public ArjLocalHeader(Charset charset, String fileName, String comment) {
-        super(charset, (byte) 0 /* stored */, (byte) 1 /* text */, fileName, comment);
+    public ArjMainHeader(Charset charset, String fileName, String comment) {
+        super(charset, (byte) 2, (byte) 2, fileName, comment);
+    }
+
+    @Override
+    protected int extraLength() {
+        return 4 + 4 + 4 + 4 + 2 + 2 + 1 + 1;
     }
 
     @Override
     protected void writeBasicHeader(ByteBuffer output) throws IOException {
         super.writeBasicHeader(output);
+        output.putInt(0); // creation time
         output.putInt(0); // modification time
-        output.putInt(0); // compressed file size
-        output.putInt(0); // uncompressed file size
-        output.putInt(0); // file CRC32
+        output.putInt(0); // zero
+        output.putInt(0); // zero
         output.putShort((short) 0); // zero
-        output.putShort((short) 0); // file access mode
+        output.putShort((short) 0); // zero
         output.put((byte) 0); // zero
         output.put((byte) 0); // zero
-    }
-
-    @Override
-    protected int extraLength() {
-        return 0;
     }
 }

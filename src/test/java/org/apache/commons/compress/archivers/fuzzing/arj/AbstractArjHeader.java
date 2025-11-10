@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.commons.compress.archivers.fuzzing;
+package org.apache.commons.compress.archivers.fuzzing.arj;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -47,11 +47,12 @@ public abstract class AbstractArjHeader {
     protected abstract int extraLength();
 
     public byte getBasicHeaderLength() {
+        // Not sure about the length calculation here, but it should be plenty after accounting for the extra length that was previously missing.
         return (byte) (0x1E + extraLength());
     }
 
     public short getHeaderLength() {
-        return (short) (0x1E + extraLength() + fileName.length + 1 + comment.length + 1);
+        return (short) (getBasicHeaderLength() + fileName.length + 1 + comment.length + 1 + 4 + 1);
     }
 
     public void writeTo(ByteBuffer output) throws IOException {

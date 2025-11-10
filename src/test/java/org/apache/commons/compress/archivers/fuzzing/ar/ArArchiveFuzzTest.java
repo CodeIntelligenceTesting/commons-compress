@@ -31,11 +31,9 @@ import com.code_intelligence.jazzer.mutation.annotation.WithUtf8Length;
 import com.code_intelligence.jazzer.mutation.utils.PropertyConstraint;
 import org.apache.commons.compress.archivers.ar.*;
 import org.apache.commons.compress.archivers.fuzzing.AbstractWritable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 record ArchiveValues(@WithUtf8Length(min = 1, max = 64) String fileName,
-                            @WithLength(min = 0, max = 8192) byte[] data,
+                            byte /*@WithLength(min = 0, max = 8192)*/[] data,
                             long length,
                             int userId,
                             int groupId,
@@ -44,18 +42,9 @@ record ArchiveValues(@WithUtf8Length(min = 1, max = 64) String fileName,
                             boolean useRealDataLength,
                             int alternativeDataLength) {}
 record ArEntriesRecord(ArHeader header, byte[] content) {}
-record ArchiveStarter(Boolean ifRealHeader, @WithLength(min = 0, max = 8) byte[] alternativeArchiveHeader) {}
+record ArchiveStarter(Boolean ifHeader, Boolean ifRealHeader, byte /*@WithLength(min = 0, max = 8)*/[] alternativeArchiveHeader) {}
 
 public class ArArchiveFuzzTest extends AbstractWritable {
-
-    public void writeArchiveHeader(final ByteBuffer buffer, byte[] archiveHeader) {
-        if (buffer.remaining() == buffer.capacity()) {
-            writeBytes(buffer, archiveHeader, 8);
-        } else {
-            throw  new IllegalArgumentException("Invalid archiveHeader size");
-        }
-    }
-
 
     @FuzzTest
     public void arOutAndInFuzzTest(
@@ -89,7 +78,14 @@ public class ArArchiveFuzzTest extends AbstractWritable {
 
             try (ArArchiveInputStream arIn = new ArArchiveInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
                 try {
-                    while ( arIn.getNextEntry() != null) {}
+                    int i = 0;
+
+                    for ( ArArchiveEntry entry = arIn.getNextEntry(); entry != null; entry = arIn.getNextEntry() ) {
+                        i++;
+                        // touch all getters to see if something breaks
+                        checkEntryData(arIn, entry);
+                    }
+                    //System.out.println("Number of entries in arOutAndInFuzzTest: " + i);
                 } catch (RuntimeException e) {
                     //ignored
                 }
@@ -99,31 +95,18 @@ public class ArArchiveFuzzTest extends AbstractWritable {
         }
     }
 
-    private static byte[] readNBytes(InputStream in, int len) throws IOException {
-        byte[] out = new byte[len];
-        int off = 0;
-        while (off < len) {
-            int r = in.read(out, off, len - off);
-            if (r < 0) break;
-            off += r;
-        }
-        if (off == len) return out;
-        byte[] truncated = new byte[off];
-        System.arraycopy(out, 0, truncated, 0, off);
-        return truncated;
-    }
-
     @FuzzTest
-    public void arInTest(@NotNull(constraint = PropertyConstraint.RECURSIVE) List<ArEntriesRecord> arEntriesList,
+    public void arInFuzzTest(@NotNull(constraint = PropertyConstraint.RECURSIVE) List<ArEntriesRecord> arEntriesList,
                          @NotNull(constraint = PropertyConstraint.RECURSIVE) ArchiveStarter archiveStarter) {
-        ByteBuffer buffer = ByteBuffer.allocate(getNecessaryByteArraySize(arEntriesList));
+        ByteBuffer buffer = ByteBuffer.allocate(getNecessaryByteArraySize(arEntriesList)*2); // Not sure how much space we need, so allocate double the expected size
         try {
-            if(!archiveStarter.ifRealHeader()) {
-                this.writeArchiveHeader(buffer, ArArchiveEntry.HEADER.getBytes(StandardCharsets.US_ASCII));
-            } else {
-                this.writeArchiveHeader(buffer, archiveStarter.alternativeArchiveHeader());
+            if (archiveStarter.ifHeader()) {
+                if(archiveStarter.ifRealHeader()) {
+                    this.writeBytes(buffer, ArArchiveEntry.HEADER.getBytes(StandardCharsets.US_ASCII), 8);
+                } else {
+                    this.writeBytes(buffer, archiveStarter.alternativeArchiveHeader(), 8);
+                }
             }
-
 
             for (ArEntriesRecord arEntry : arEntriesList ) {
                 try {
@@ -139,7 +122,13 @@ public class ArArchiveFuzzTest extends AbstractWritable {
             // ignored
         }
         try (ArArchiveInputStream arIn = new ArArchiveInputStream(new ByteArrayInputStream(buffer.array()))) {
-            while ( arIn.getNextEntry() != null) {}
+            int i = 0;
+            for ( ArArchiveEntry entry = arIn.getNextEntry(); entry != null; entry = arIn.getNextEntry() ) {
+                i++;
+                // touch all getters to see if something breaks
+                checkEntryData(arIn, entry);
+            }
+            System.out.println("Number of entries in arInFuzzTest: " + i);
         } catch (IOException | RuntimeException e) {
             // ignored
         }
@@ -155,13 +144,32 @@ public class ArArchiveFuzzTest extends AbstractWritable {
         return size;
     }
 
+    private void checkEntryData(ArArchiveInputStream arIn, ArArchiveEntry entry) throws IOException {
+        entry.getName();
+        entry.getUserId();
+        entry.getGroupId();
+        entry.getMode();
+        entry.getLastModifiedDate();
+
+        long bytesRead = 0;
+        while (bytesRead < entry.getLength()) {
+            if (entry.getLength() - bytesRead > Integer.MAX_VALUE) {
+                arIn.readNBytes(Integer.MAX_VALUE);
+                bytesRead += Integer.MAX_VALUE;
+            } else {
+                long toRead = entry.getLength() - bytesRead;
+                arIn.readNBytes((int) toRead);
+                bytesRead += toRead;
+            }
+        }
+    }
+
+
     @Override
     public int getRecordSize() {
         return 0;
     }
 
     @Override
-    public void writeTo(ByteBuffer buffer) {
-
-    }
+    public void writeTo(ByteBuffer buffer) {}
 }

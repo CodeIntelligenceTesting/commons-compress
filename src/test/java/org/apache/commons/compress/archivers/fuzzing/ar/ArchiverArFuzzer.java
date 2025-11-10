@@ -13,19 +13,20 @@
 // limitations under the License.
 //
 ////////////////////////////////////////////////////////////////////////////////
-package org.apache.commons.compress.archivers.fuzzing.ossfuzz;
+package org.apache.commons.compress.archivers.fuzzing.ar;
 import com.code_intelligence.jazzer.junit.FuzzTest;
 import com.code_intelligence.jazzer.mutation.annotation.NotNull;
-import org.apache.commons.compress.archivers.arj.ArjArchiveInputStream;
+import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
+import org.apache.commons.compress.archivers.fuzzing.ossfuzz.BaseTests;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-public class ArchiverArjFuzzer extends BaseTests {
+public class ArchiverArFuzzer extends BaseTests {
     @FuzzTest
-    public void fuzzerTestOneInput(@NotNull byte[] data) {
+    public void fuzzArchiveInputStream(@NotNull byte[] data) {
         try {
-            fuzzArchiveInputStream(new ArjArchiveInputStream(new ByteArrayInputStream(data)));
+            fuzzArchiveInputStream(new ArArchiveInputStream(new ByteArrayInputStream(data)));
         } catch (IOException ignored) {
         }
     }
