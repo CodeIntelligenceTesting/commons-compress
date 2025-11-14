@@ -30,7 +30,7 @@ public class CompressZipFuzzer extends BaseTests {
     @FuzzTest
     public void fuzzerTestOneInput(@NotNull byte[] data) {
         try {
-            ZipFile zf = new ZipFile(new SeekableInMemoryByteChannel(data));
+            ZipFile zf = ZipFile.builder().setSeekableByteChannel(new SeekableInMemoryByteChannel(data)).get();
             Enumeration<? extends ZipArchiveEntry> entries = zf.getEntries();
             while(entries.hasMoreElements()) {
                 ZipArchiveEntry entry = entries.nextElement();

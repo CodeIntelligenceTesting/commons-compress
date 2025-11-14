@@ -18,6 +18,7 @@ import com.code_intelligence.jazzer.junit.FuzzTest;
 import com.code_intelligence.jazzer.mutation.annotation.NotNull;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarFile;
+import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
 
 import java.io.InputStream;
 import java.io.IOException;
@@ -28,7 +29,7 @@ public class CompressTarFuzzer extends BaseTests {
     @FuzzTest
     public void fuzzerTestOneInput(@NotNull byte[] data) {
         try {
-            TarFile tf = new TarFile(data);
+            TarFile tf = TarFile.builder().setSeekableByteChannel(new SeekableInMemoryByteChannel(data)).get();
             for (TarArchiveEntry entry : tf.getEntries()) {
                 InputStream is = tf.getInputStream(entry);
                 is.read(new byte[1024]);

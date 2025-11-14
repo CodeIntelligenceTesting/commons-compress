@@ -301,7 +301,7 @@ Brotli, Zstandard and ar, cpio, jar, tar, zip, dump, 7z, arj.
                 <exclude>src/test/java/org/apache/commons/compress/archivers/TestArchiveGenerator.java</exclude>
                 <exclude>**/*.log</exclude>
                 <exclude>**/.*</exclude>
-
+                <exclude>**/*Reproducer*</exclude>
             </excludes>
           </configuration>
         </plugin>
