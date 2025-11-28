@@ -40,9 +40,9 @@ public abstract class AbstractTarHeader {
     private final String fileName;
 
     @SuppressWarnings("OctalInteger")
-    private final int fileMode;
-    private final int ownerId;
-    private final int groupId;
+    private final int fileMode = 0100644;
+    private final int ownerId = 0;
+    private final int groupId = 0;
     private final long fileSize; // size of the file in bytes
     private final long lastModifiedTime; // last modification time in seconds since epoch
     private final byte linkIndicator;
@@ -55,9 +55,9 @@ public abstract class AbstractTarHeader {
 
     public AbstractTarHeader(
             final @WithUtf8Length(min = 1, max = 100) String fileName,
-            final @InRange(min = 0, max = OCTAL_7_DIGITS) int fileMode,
-            final @InRange(min = 0, max = OCTAL_5_DIGITS) int ownerId,
-            final @InRange(min = 0, max = OCTAL_5_DIGITS) int groupId,
+//            final @InRange(min = 0, max = OCTAL_7_DIGITS) int fileMode,
+//            final @InRange(min = 0, max = OCTAL_5_DIGITS) int ownerId,
+//            final @InRange(min = 0, max = OCTAL_5_DIGITS) int groupId,
             final @InRange(min = 0, max = OCTAL_11_DIGITS) long fileSize,
             final @InRange(min = 0, max = OCTAL_11_DIGITS) long lastModifiedTime,
             final byte linkIndicator,
