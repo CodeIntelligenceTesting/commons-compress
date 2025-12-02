@@ -57,7 +57,7 @@ public class CompressorStreamFactoryRoundtripFuzzTest {
     }
 
     @FuzzTest(maxDuration = "30m")
-    public void fuzzCompressors(@InRange(min = 0, max = 6) int compressor, byte @NotNull @ValuePool("compressedData") [] data) {
+    public void fuzzCompressors(@InRange(min = 0, max = 6) int compressor, byte @NotNull @ValuePool("compressedData") [] data, boolean decompressUntilEoF) {
         String compressorType = COMPRESSOR_TYPES[compressor];
         CompressorStreamProvider factory = new CompressorStreamFactory();
         ByteArrayOutputStream compressedOs = new ByteArrayOutputStream();
@@ -66,7 +66,7 @@ public class CompressorStreamFactoryRoundtripFuzzTest {
             compressorOutputStream.flush();
 
             ByteArrayInputStream is = new ByteArrayInputStream(compressedOs.toByteArray());
-            CompressorInputStream compressorInputStream = factory.createCompressorInputStream(compressorType, is, false);
+            CompressorInputStream compressorInputStream = factory.createCompressorInputStream(compressorType, is, decompressUntilEoF);
             ByteArrayOutputStream decompressedOs = new ByteArrayOutputStream();
             IOUtils.copy(compressorInputStream, decompressedOs);
             compressorInputStream.close();
