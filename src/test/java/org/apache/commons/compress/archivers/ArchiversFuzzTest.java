@@ -16,19 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.commons.compress.archivers.fuzzing;
+package org.apache.commons.compress.archivers;
 
 import com.code_intelligence.jazzer.junit.FuzzTest;
 import com.code_intelligence.jazzer.mutation.annotation.InRange;
 import com.code_intelligence.jazzer.mutation.annotation.NotNull;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import com.code_intelligence.jazzer.mutation.annotation.ValuePool;
+import org.apache.commons.compress.FuzzingHelpers;
 import org.junit.jupiter.api.BeforeAll;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.logging.LogManager;
+import java.util.stream.Stream;
 
 
 public class ArchiversFuzzTest {
@@ -48,13 +49,18 @@ public class ArchiversFuzzTest {
         ArchiveStreamFactory.SEVEN_Z
     };
 
+    static Stream<?> compressedData() {
+        return Stream.of(Paths.get("src", "test",  "resources"))
+                .flatMap(FuzzingHelpers::readAllFilesInDirectory);
+    }
+
     @BeforeAll
     public static void setup() {
         LogManager.getLogManager().reset();
     }
 
     @FuzzTest
-    public void fuzzArchivers(@InRange(min = 0, max = 11) int archive, byte @NotNull [] data) {
+    public void fuzzArchivers(@InRange(min = 0, max = 11) int archive, byte @NotNull @ValuePool("compressedData")[] data) {
         try {
             String archiveType = ARCHIVE_TYPES[archive];
             ArchiveStreamFactory factory = new ArchiveStreamFactory(archiveType);
@@ -67,4 +73,8 @@ public class ArchiversFuzzTest {
         } catch (IOException | IllegalArgumentException ignored) {
         }
     }
+
+
+
+
 }
