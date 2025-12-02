@@ -21,11 +21,15 @@ package org.apache.commons.compress.compressors;
 import com.code_intelligence.jazzer.junit.FuzzTest;
 import com.code_intelligence.jazzer.mutation.annotation.InRange;
 import com.code_intelligence.jazzer.mutation.annotation.NotNull;
+import com.code_intelligence.jazzer.mutation.annotation.ValuePool;
+import org.apache.commons.compress.FuzzingHelpers;
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -47,8 +51,13 @@ public class CompressorStreamFactoryRoundtripFuzzTest {
         CompressorStreamFactory.XZ
     };
 
+    static Stream<?> compressedData() {
+        return Stream.of(Paths.get("src", "test",  "resources"))
+                .flatMap(FuzzingHelpers::readAllFilesInDirectory);
+    }
+
     @FuzzTest(maxDuration = "30m")
-    public void fuzzCompressors(@InRange(min = 0, max = 6) int compressor, byte @NotNull [] data) {
+    public void fuzzCompressors(@InRange(min = 0, max = 6) int compressor, byte @NotNull @ValuePool("compressedData") [] data) {
         String compressorType = COMPRESSOR_TYPES[compressor];
         CompressorStreamProvider factory = new CompressorStreamFactory();
         ByteArrayOutputStream compressedOs = new ByteArrayOutputStream();
