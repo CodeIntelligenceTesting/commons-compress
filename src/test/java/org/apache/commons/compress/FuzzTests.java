@@ -264,6 +264,8 @@ public class FuzzTests {
       // ignore
     } catch (IOException e) {
       // ignore
+    } catch (IllegalArgumentException e) {
+      // ignore
     }
     return null;
   }
@@ -354,8 +356,12 @@ public class FuzzTests {
       aos.finish();
       aos.flush();
       return baos.toByteArray();
-    } catch (Throwable e) {
-      // Handle archiving errors
+    } catch (ArchiveException e) {
+      // ignore
+    } catch (IOException e) {
+      // ignore
+    } catch (IllegalArgumentException e) {
+      // ignore
     }
     return null;
   }
@@ -407,6 +413,8 @@ public class FuzzTests {
       // ignore
     } catch (InvalidPathException e) {
       // ignore
+    } catch (IllegalArgumentException e) {
+      // ignore
     }
 
     return null;
@@ -434,7 +442,9 @@ public class FuzzTests {
         }
       }
       return baos.toByteArray();
-    } catch (Exception e) {
+    } catch (IOException e) {
+      // ignore
+    } catch (IllegalArgumentException e) {
       // ignore
     }
     return null;
@@ -615,8 +625,10 @@ public class FuzzTests {
       aos.finish();
       aos.flush();
       return baos.toByteArray();
-    } catch (Throwable e) {
-      // Handle archiving errors
+    } catch (IOException e) {
+      // ignore
+    } catch (IllegalArgumentException e) {
+      // ignore
     }
     return null;
   }
