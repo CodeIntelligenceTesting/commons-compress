@@ -18,6 +18,7 @@
  */
 package org.apache.commons.compress.archivers;
 
+import org.apache.commons.compress.archivers.ar.*;
 import org.apache.commons.compress.archivers.dump.DumpArchiveConstants.SEGMENT_TYPE;
 import org.apache.commons.compress.archivers.dump.DumpArchiveEntry.TYPE;
 import org.apache.commons.compress.archivers.fuzzing.*;

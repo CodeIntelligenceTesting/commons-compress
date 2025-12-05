@@ -16,12 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.commons.compress.archivers.fuzzing;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
+package org.apache.commons.compress;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public abstract class AbstractWritable {
 
@@ -39,14 +40,22 @@ public abstract class AbstractWritable {
         pad(buffer, bytes.length, length, (byte) ' ');
     }
 
+    protected void writeBytes(ByteBuffer buffer, byte[] bytes, int length) {
+        if (bytes.length > length) {
+            throw new IllegalArgumentException(
+                    "Byte array with \"" + bytes.length + "\" do not fit in " + length + " remaining bytes");
+        }
+        buffer.put(bytes);
+        pad(buffer, bytes.length, length, (byte) 0);
+    }
+
     protected void writeString(ByteBuffer buffer, String value, Charset charset, int length) {
         final byte[] bytes = value.getBytes(charset);
         if (bytes.length > length) {
             throw new IllegalArgumentException(
                     "String \"" + value + "\" is too long to fit in " + length + " bytes");
         }
-        buffer.put(bytes);
-        pad(buffer, bytes.length, length, (byte) 0);
+        writeBytes(buffer, bytes, length);
     }
 
     protected void pad(ByteBuffer buffer, int written, int length, byte padByte) {

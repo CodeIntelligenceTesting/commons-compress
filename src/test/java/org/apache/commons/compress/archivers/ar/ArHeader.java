@@ -16,14 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.commons.compress.archivers.fuzzing;
-
-import static java.nio.charset.StandardCharsets.US_ASCII;
+package org.apache.commons.compress.archivers.ar;
 
 import com.code_intelligence.jazzer.mutation.annotation.InRange;
 import com.code_intelligence.jazzer.mutation.annotation.WithUtf8Length;
+import org.apache.commons.compress.AbstractWritable;
+
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class ArHeader extends AbstractWritable {
 
@@ -70,4 +72,6 @@ public class ArHeader extends AbstractWritable {
         buffer.put((byte) '`');
         buffer.put((byte) '\n');
     }
+
+
 }
