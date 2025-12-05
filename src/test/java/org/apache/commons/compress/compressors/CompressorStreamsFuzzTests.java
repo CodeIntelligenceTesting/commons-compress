@@ -23,7 +23,6 @@ import com.code_intelligence.jazzer.mutation.annotation.InRange;
 import com.code_intelligence.jazzer.mutation.annotation.NotNull;
 import com.code_intelligence.jazzer.mutation.annotation.ValuePool;
 import org.apache.commons.compress.FuzzingHelpers;
-import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Assertions;
 
@@ -35,7 +34,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class CompressorStreamFactoryRoundtripFuzzTest {
+public class CompressorStreamsFuzzTests {
     private static final String[] COMPRESSOR_TYPES = {
 //            CompressorStreamFactory.BROTLI,
         CompressorStreamFactory.BZIP2,
@@ -59,7 +58,7 @@ public class CompressorStreamFactoryRoundtripFuzzTest {
     }
 
     @FuzzTest(maxDuration = "30m")
-    public void fuzzCompressors(@InRange(min = 0, max = 6) int compressor, byte @NotNull @ValuePool("compressedData") [] data, boolean decompressUntilEoF) {
+    public void fuzzCompressorsRoundtrip(@InRange(min = 0, max = 6) int compressor, byte @NotNull @ValuePool("compressedData") [] data, boolean decompressUntilEoF) {
         String compressorType = COMPRESSOR_TYPES[compressor];
         CompressorStreamProvider factory = new CompressorStreamFactory();
         ByteArrayOutputStream compressedOs = new ByteArrayOutputStream();
