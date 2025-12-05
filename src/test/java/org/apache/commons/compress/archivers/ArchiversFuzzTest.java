@@ -23,11 +23,18 @@ import com.code_intelligence.jazzer.mutation.annotation.InRange;
 import com.code_intelligence.jazzer.mutation.annotation.NotNull;
 import com.code_intelligence.jazzer.mutation.annotation.ValuePool;
 import org.apache.commons.compress.FuzzingHelpers;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.LogManager;
 import java.util.stream.Stream;
 
@@ -49,6 +56,8 @@ public class ArchiversFuzzTest {
         ArchiveStreamFactory.SEVEN_Z
     };
 
+    private static final String ARCHIVE_ENTRY_ENDING = "ArchiveEntry";
+
     static Stream<?> compressedData() {
         return Stream.of(Paths.get("src", "test",  "resources"))
                 .flatMap(FuzzingHelpers::readAllFilesInDirectory);
@@ -60,7 +69,7 @@ public class ArchiversFuzzTest {
     }
 
     @FuzzTest
-    public void fuzzArchivers(@InRange(min = 0, max = 11) int archive, byte @NotNull @ValuePool("compressedData")[] data) {
+    public void fuzzArchiversInParsing(@InRange(min = 0, max = 11) int archive, byte @NotNull @ValuePool("compressedData")[] data) {
         try {
             String archiveType = ARCHIVE_TYPES[archive];
             ArchiveStreamFactory factory = new ArchiveStreamFactory(archiveType);
@@ -74,7 +83,83 @@ public class ArchiversFuzzTest {
         }
     }
 
+    @FuzzTest
+    public void fuzzArchiversInAndOutRoundtrip(@InRange(min = 0, max = 11) int archive, byte @NotNull @ValuePool("compressedData")[] data) {
+        String archiveType = ARCHIVE_TYPES[archive];
+        ArchiveStreamFactory factory = new ArchiveStreamFactory(archiveType);
+        List<ArchiveEntryAndDataWrapper> decompList1 = new ArrayList<>();
+        List<ArchiveEntryAndDataWrapper> decompList2 = new ArrayList<>();
+        byte[] comp1 = new byte[0];
+        String extractedArchiveType = archiveType;
+        try (ArchiveInputStream<? extends ArchiveEntry> in = factory.createArchiveInputStream(new ByteArrayInputStream(data))) {
+            // First trying to understand what we are actually extracting here...
+            ArchiveEntry entry = in.getNextEntry();
+            if (entry != null && entry.getClass().getSimpleName().endsWith(ARCHIVE_ENTRY_ENDING)) {
+                extractedArchiveType = entry.getClass().getSimpleName().substring(0, entry.getClass().getSimpleName().length() - ARCHIVE_ENTRY_ENDING.length()).toLowerCase();
+            }
+            // ... then saving the entries to insert them for the next round.
+            while ( entry != null) {
+                decompList1.add(new ArchiveEntryAndDataWrapper(entry, IOUtils.toByteArray(in)));
+                entry = in.getNextEntry();
+            }
+        } catch (IOException | IllegalArgumentException | IllegalStateException ignored) {
+            return;
+        }
+
+        // Writing the extracted data back to an archive.
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ArchiveOutputStream<ArchiveEntry> out = factory.createArchiveOutputStream(extractedArchiveType, baos)) {
+            for (ArchiveEntryAndDataWrapper decomp : decompList1) {
+                out.putArchiveEntry(decomp.entry);
+                out.write(decomp.data);
+                out.closeArchiveEntry();
+            }
+            out.finish();
+
+            baos.flush();
+            comp1 = baos.toByteArray();
+
+        } catch (IOException | IllegalArgumentException | IllegalStateException ignored) {
+            return;
+        }
+
+        // Extracting the archive again.
+        try (ArchiveInputStream<? extends ArchiveEntry> in = factory.createArchiveInputStream(new ByteArrayInputStream(comp1))) {
+            for (ArchiveEntry entry = in.getNextEntry(); entry != null; entry = in.getNextEntry()) {
+                decompList2.add(new ArchiveEntryAndDataWrapper(entry, IOUtils.toByteArray(in)));
+            }
+        } catch (IOException | IllegalArgumentException | IllegalStateException ignored) {
+            return;
+        }
+
+        // Roundtrip to check that checks that decomp(comp(decomp(data))) == decomp(data)
+        Assertions.assertEquals(decompList1, decompList2);
+    }
 
 
+
+    private static class ArchiveEntryAndDataWrapper {
+        private  final ArchiveEntry entry;
+        private final byte[] data;
+
+        private ArchiveEntryAndDataWrapper(ArchiveEntry entry, byte[] data) {
+            this.entry = entry;
+            this.data = data;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            try {
+                if (o instanceof ArchiveEntryAndDataWrapper) {
+                    ArchiveEntryAndDataWrapper other = (ArchiveEntryAndDataWrapper) o;
+
+                    return entry.equals(other.entry) && Arrays.equals(data, other.data);
+                }
+            } catch (ClassCastException e) {
+                return false;
+            }
+
+            return false;
+        }
+    }
 
 }
