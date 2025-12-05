@@ -25,7 +25,24 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
+
 public class FuzzingHelpers {
+    // Factor to detect compression bombs
+    public static final int COMPRESSION_BOMB_FACTOR = 5;
+    // Minsize to detect compression bombs
+    public static final int COMPRESSION_BOMB_MIN_SIZE_IN_BYTES = 50;
+    // Max size allowed to not automatically trigger a compression bomb warning
+    public static final int COMPRESSION_BOMB_MAX_INCREASED_SIZE_IN_BYTES = 1024;
+
+    public static boolean isCompressionBomb(int uncompressedSize, int compressedSize) {
+
+        if (compressedSize < COMPRESSION_BOMB_MIN_SIZE_IN_BYTES) {
+            return false;
+        } else if (compressedSize > COMPRESSION_BOMB_MAX_INCREASED_SIZE_IN_BYTES + uncompressedSize) {
+            return true;
+        } else return uncompressedSize * COMPRESSION_BOMB_FACTOR < compressedSize ;
+    }
 
     // traverse directory, and read all files and return a stream of Strings
     public static Stream<byte[]> readAllFilesInDirectory(Path path) {

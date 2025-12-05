@@ -23,7 +23,9 @@ import com.code_intelligence.jazzer.mutation.annotation.InRange;
 import com.code_intelligence.jazzer.mutation.annotation.NotNull;
 import com.code_intelligence.jazzer.mutation.annotation.ValuePool;
 import org.apache.commons.compress.FuzzingHelpers;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -65,7 +67,12 @@ public class CompressorStreamFactoryRoundtripFuzzTest {
             compressorOutputStream.write(data);
             compressorOutputStream.flush();
 
-            ByteArrayInputStream is = new ByteArrayInputStream(compressedOs.toByteArray());
+            byte[] compressedBytes = compressedOs.toByteArray();
+
+            // Compression Bomb check.
+            Assertions.assertFalse(FuzzingHelpers.isCompressionBomb(data.length, compressedBytes.length), "Compressor: " + compressorType +" contains a compression bomb. Input with size: " +data.length +" was compressed to size: " +compressedBytes.length +".");
+
+            ByteArrayInputStream is = new ByteArrayInputStream(compressedBytes);
             CompressorInputStream compressorInputStream = factory.createCompressorInputStream(compressorType, is, decompressUntilEoF);
             ByteArrayOutputStream decompressedOs = new ByteArrayOutputStream();
             IOUtils.copy(compressorInputStream, decompressedOs);
@@ -76,5 +83,27 @@ public class CompressorStreamFactoryRoundtripFuzzTest {
 
         } catch (IOException ignored) {
         }
+    }
+
+    @FuzzTest(maxDuration = "30m")
+    public void fuzzCompressorsDifferential(@InRange(min = 0, max = 6) int compressor, byte @NotNull @ValuePool("compressedData") [] data, boolean decompressUntilEoF) {
+        String compressorType = COMPRESSOR_TYPES[compressor];
+        CompressorStreamProvider factory = new CompressorStreamFactory();
+        byte[] decomp1 = new byte[0];
+        byte[] decomp2 = new byte[0];
+        try (CompressorInputStream compressorInputStream = factory.createCompressorInputStream(compressorType, new ByteArrayInputStream(data), decompressUntilEoF)) {
+
+            decomp1 = IOUtils.toByteArray(compressorInputStream);
+
+        } catch (IOException ignored) {
+        }
+        try (CompressorInputStream compressorInputStream = factory.createCompressorInputStream(compressorType, new ByteArrayInputStream(data), decompressUntilEoF)) {
+
+            decomp2 = IOUtils.toByteArray(compressorInputStream);
+
+        } catch (IOException ignored) {
+        }
+
+        Assertions.assertArrayEquals(decomp1, decomp2); // Checking that we always do have the same results.
     }
 }
