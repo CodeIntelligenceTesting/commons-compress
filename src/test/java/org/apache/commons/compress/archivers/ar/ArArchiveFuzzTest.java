@@ -40,8 +40,6 @@ public class ArArchiveFuzzTest extends AbstractWritable {
             final @NotNull(constraint = PropertyConstraint.RECURSIVE) List<ArchiveValues> archiveValuesList,
             final int longFileMode) {
 
-        System.out.println("Starting arOutAndInFuzzTest.");
-
         // Write an ar archive with two entries using fuzzed data
         try ( ByteArrayOutputStream baos = new ByteArrayOutputStream() ;
               ArArchiveOutputStream arOut = new ArArchiveOutputStream(baos)) {
