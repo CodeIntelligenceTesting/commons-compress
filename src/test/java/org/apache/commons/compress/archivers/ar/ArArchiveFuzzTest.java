@@ -66,7 +66,7 @@ public class ArArchiveFuzzTest extends AbstractWritable {
             try (ArArchiveInputStream arIn = new ArArchiveInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
                 try {
                     while (arIn.getNextEntry() != null) {
-                        // ignored
+                        arIn.read(new byte[1024]);
                     }
                 } catch (RuntimeException e) {
                     //ignored
@@ -105,7 +105,7 @@ public class ArArchiveFuzzTest extends AbstractWritable {
         }
         try (ArArchiveInputStream arIn = new ArArchiveInputStream(new ByteArrayInputStream(buffer.array()))) {
             while (arIn.getNextEntry() != null) {
-                // ignored
+                arIn.read(new byte[1024]);
             }
         } catch (IOException | RuntimeException e) {
             // ignored
