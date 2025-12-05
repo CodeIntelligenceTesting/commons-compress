@@ -30,7 +30,6 @@ import org.junit.jupiter.api.BeforeAll;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,8 +54,6 @@ public class ArchiversFuzzTest {
         ArchiveStreamFactory.ZIP,
         ArchiveStreamFactory.SEVEN_Z
     };
-
-    private static final String ARCHIVE_ENTRY_ENDING = "ArchiveEntry";
 
     static Stream<?> compressedData() {
         return Stream.of(Paths.get("src", "test",  "resources"))
@@ -91,11 +88,12 @@ public class ArchiversFuzzTest {
         List<ArchiveEntryAndDataWrapper> decompList2 = new ArrayList<>();
         byte[] comp1 = new byte[0];
         String extractedArchiveType = archiveType;
+
         try (ArchiveInputStream<? extends ArchiveEntry> in = factory.createArchiveInputStream(new ByteArrayInputStream(data))) {
             // First trying to understand what we are actually extracting here...
             ArchiveEntry entry = in.getNextEntry();
-            if (entry != null && entry.getClass().getSimpleName().endsWith(ARCHIVE_ENTRY_ENDING)) {
-                extractedArchiveType = entry.getClass().getSimpleName().substring(0, entry.getClass().getSimpleName().length() - ARCHIVE_ENTRY_ENDING.length()).toLowerCase();
+            if (entry != null ) {
+                extractedArchiveType = FuzzingHelpers.getArchiveTypeFromArchiveEntryInstanceClassName(entry.getClass());
             }
             // ... then saving the entries to insert them for the next round.
             while ( entry != null) {
@@ -114,7 +112,6 @@ public class ArchiversFuzzTest {
                 out.closeArchiveEntry();
             }
             out.finish();
-
             baos.flush();
             comp1 = baos.toByteArray();
 
@@ -151,13 +148,11 @@ public class ArchiversFuzzTest {
             try {
                 if (o instanceof ArchiveEntryAndDataWrapper) {
                     ArchiveEntryAndDataWrapper other = (ArchiveEntryAndDataWrapper) o;
-
                     return entry.equals(other.entry) && Arrays.equals(data, other.data);
                 }
             } catch (ClassCastException e) {
                 return false;
             }
-
             return false;
         }
     }

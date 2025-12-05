@@ -18,6 +18,9 @@
  */
 package org.apache.commons.compress;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,6 +45,19 @@ public class FuzzingHelpers {
         } else if (compressedSize > COMPRESSION_BOMB_MAX_INCREASED_SIZE_IN_BYTES + uncompressedSize) {
             return true;
         } else return uncompressedSize * COMPRESSION_BOMB_FACTOR < compressedSize ;
+    }
+
+    public static String getArchiveTypeFromArchiveEntryInstanceClassName (Class<? extends ArchiveEntry> cls) {
+        // Ending of the ArchiveEntry classes
+        final String ARCHIVE_ENTRY_ENDING = "ArchiveEntry";
+        if (cls.getSimpleName().endsWith(ARCHIVE_ENTRY_ENDING)) {
+            String archiveType = cls.getSimpleName().substring(0, cls.getSimpleName().length() - ARCHIVE_ENTRY_ENDING.length()).toLowerCase();
+            if (archiveType.equals("SevenZ".toLowerCase())) {
+                archiveType = ArchiveStreamFactory.SEVEN_Z;
+            }
+            return archiveType;
+        }
+        throw new IllegalArgumentException("Unsupported archive entry type: " + cls.getSimpleName());
     }
 
     // traverse directory, and read all files and return a stream of Strings
