@@ -81,13 +81,12 @@ public class ArchiversFuzzTest {
     }
 
     @FuzzTest(maxDuration = "30m")
-    public void fuzzArchiversInAndOutRoundtrip(@InRange(min = 0, max = 11) int archive, byte @NotNull @ValuePool("compressedData")[] data) {
-        String archiveType = ARCHIVE_TYPES[archive];
-        ArchiveStreamFactory factory = new ArchiveStreamFactory(archiveType);
+    public void fuzzArchiversInAndOutRoundtrip(byte @NotNull @ValuePool("compressedData")[] data) {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
         List<ArchiveEntryAndDataWrapper> decompList1 = new ArrayList<>();
         List<ArchiveEntryAndDataWrapper> decompList2 = new ArrayList<>();
         byte[] comp1 = new byte[0];
-        String extractedArchiveType = archiveType;
+        String extractedArchiveType = "";
 
         try (ArchiveInputStream<? extends ArchiveEntry> in = factory.createArchiveInputStream(new ByteArrayInputStream(data))) {
             // First trying to understand what we are actually extracting here...
