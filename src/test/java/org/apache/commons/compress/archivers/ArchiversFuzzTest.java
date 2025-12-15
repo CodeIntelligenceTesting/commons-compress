@@ -65,7 +65,7 @@ public class ArchiversFuzzTest {
         LogManager.getLogManager().reset();
     }
 
-    @FuzzTest
+    @FuzzTest(maxDuration = "30m")
     public void fuzzArchiversInParsing(@InRange(min = 0, max = 11) int archive, byte @NotNull @ValuePool("compressedData")[] data) {
         try {
             String archiveType = ARCHIVE_TYPES[archive];
@@ -80,7 +80,7 @@ public class ArchiversFuzzTest {
         }
     }
 
-    @FuzzTest
+    @FuzzTest(maxDuration = "30m")
     public void fuzzArchiversInAndOutRoundtrip(@InRange(min = 0, max = 11) int archive, byte @NotNull @ValuePool("compressedData")[] data) {
         String archiveType = ARCHIVE_TYPES[archive];
         ArchiveStreamFactory factory = new ArchiveStreamFactory(archiveType);
