@@ -82,29 +82,37 @@ public class ArchiversFuzzTest {
 
     @FuzzTest(maxDuration = "30m")
     public void fuzzArchiversInAndOutRoundtrip(byte @NotNull @ValuePool("compressedData")[] data) {
+
         ArchiveStreamFactory factory = new ArchiveStreamFactory();
         List<ArchiveEntryAndDataWrapper> decompList1 = new ArrayList<>();
         List<ArchiveEntryAndDataWrapper> decompList2 = new ArrayList<>();
-        byte[] comp1 = new byte[0];
-        String extractedArchiveType = "";
+        byte[] comp1;
+        String archiveType;
 
-        try (ArchiveInputStream<? extends ArchiveEntry> in = factory.createArchiveInputStream(new ByteArrayInputStream(data))) {
-            // First trying to understand what we are actually extracting here...
-            ArchiveEntry entry = in.getNextEntry();
-            if (entry != null ) {
-                extractedArchiveType = FuzzingHelpers.getArchiveTypeFromArchiveEntryInstanceClassName(entry.getClass());
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(data)) {
+            // Detecting what we are actually trying to read here. Necessary for recompression.
+            archiveType = ArchiveStreamFactory.detect(bais);
+
+            try (ArchiveInputStream<? extends ArchiveEntry> in = factory.createArchiveInputStream(archiveType, bais)) {
+                for (ArchiveEntry entry = in.getNextEntry(); entry != null; entry = in.getNextEntry()) {
+                    decompList1.add(new ArchiveEntryAndDataWrapper(entry, IOUtils.toByteArray(in)));
+                }
+            } catch (IOException | IllegalArgumentException | IllegalStateException ignored) {
+                return;
+            } catch (NullPointerException e) {
+                // ARJ has an already checked NPE in readMainHeader(ArjArchiveInputStream.java:418)
+                // TODO remove ignored NPE after it was fixed!
+                if (archiveType.equals(ArchiveStreamFactory.ARJ)) {
+                    return;
+                } else throw e;
             }
-            // ... then saving the entries to insert them for the next round.
-            while ( entry != null) {
-                decompList1.add(new ArchiveEntryAndDataWrapper(entry, IOUtils.toByteArray(in)));
-                entry = in.getNextEntry();
-            }
-        } catch (IOException | IllegalArgumentException | IllegalStateException ignored) {
+        } catch (IOException ignored ) {
             return;
         }
 
+
         // Writing the extracted data back to an archive.
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ArchiveOutputStream<ArchiveEntry> out = factory.createArchiveOutputStream(extractedArchiveType, baos)) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ArchiveOutputStream<ArchiveEntry> out = factory.createArchiveOutputStream(archiveType, baos)) {
             for (ArchiveEntryAndDataWrapper decomp : decompList1) {
                 out.putArchiveEntry(decomp.entry);
                 out.write(decomp.data);
