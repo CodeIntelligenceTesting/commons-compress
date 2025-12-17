@@ -135,6 +135,17 @@ public class ArchiversFuzzTest {
             return;
         }
 
+        // Check for hidden or lost files.
+        if (archiveType.equals(ArchiveStreamFactory.TAR)) {
+            Assertions.assertTrue(
+                    decompList1.size() == decompList2.size()
+                    ||  decompList1.size() -1 == decompList2.size() // Known issue with one missing file.
+            );
+        } else {
+            Assertions.assertEquals(decompList1.size(), decompList2.size());
+        }
+
+
         // TODO Remove filters when the already identified bugs are fixed.
         if (archiveType.equals(ArchiveStreamFactory.AR)
                 || archiveType.equals(ArchiveStreamFactory.TAR)
