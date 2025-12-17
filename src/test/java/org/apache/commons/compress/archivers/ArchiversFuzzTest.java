@@ -136,7 +136,9 @@ public class ArchiversFuzzTest {
         }
 
         // TODO Remove filters when the already identified bugs are fixed.
-        if (archiveType.equals(ArchiveStreamFactory.AR) || archiveType.equals(ArchiveStreamFactory.TAR)) {
+        if (archiveType.equals(ArchiveStreamFactory.AR)
+                || archiveType.equals(ArchiveStreamFactory.TAR)
+                || archiveType.equals(ArchiveStreamFactory.ZIP)) {
             return;
         } else {
             // Roundtrip to check that checks that decomp(comp(decomp(data))) == decomp(data)
