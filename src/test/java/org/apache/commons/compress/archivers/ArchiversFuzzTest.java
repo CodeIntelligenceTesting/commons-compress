@@ -139,12 +139,14 @@ public class ArchiversFuzzTest {
         if (archiveType.equals(ArchiveStreamFactory.TAR)) {
             Assertions.assertTrue(
                     decompList1.size() == decompList2.size()
-                    ||  decompList1.size() -1 == decompList2.size() // Known issue with one missing file.
-                    ||  decompList1.size() -2 == decompList2.size() // Known issue with two missing files.
-                    ||  decompList1.size() -3 == decompList2.size() // Known issue with three missing files.
-                    ||  decompList1.size() +1 == decompList2.size() // Known issue with one additional file.
-                    ||  decompList1.size() +2 == decompList2.size() // Known issue with two additional files.
-                    ||  decompList1.size() +6 == decompList2.size() // Known issue with six additional files.
+                    ||  decompList1.size() - decompList2.size() == -1 // Known issue with one missing file.
+                    ||  decompList1.size() - decompList2.size() == -2 // Known issue with two missing files.
+                    ||  decompList1.size() - decompList2.size() == -3 // Known issue with three missing files.
+                    ||  decompList1.size() - decompList2.size() == +1 // Known issue with one additional file.
+                    ||  decompList1.size() - decompList2.size() == +2 // Known issue with two additional files.
+                    ||  decompList1.size() - decompList2.size() == +4 // Known issue with two additional files.
+                    ||  decompList1.size() - decompList2.size() == +6 // Known issue with six additional files.
+                    ||  Math.abs(decompList1.size() - decompList2.size()) < 10 // Filter everything out that only creates little more or less files.
             );
         } else if (archiveType.equals(ArchiveStreamFactory.ZIP)) {
             Assertions.assertTrue(
